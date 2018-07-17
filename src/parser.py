@@ -15,7 +15,7 @@ def doQuery( conn ) :
     i = 0
     for id, data in cur.fetchall() :
         i += 1
-        urls = re.findall('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', data)
+        urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', data)
         print (i, id)
         print (urls)
 
