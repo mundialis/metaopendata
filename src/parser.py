@@ -15,11 +15,8 @@ def doQuery( conn ) :
     i = 0
     for id, data in cur.fetchall() :
         i += 1
-        print (i, id, data[:100])
-        # url = '<p>Hello World</p><a href="http://example.com">More Examples</a><a href="http://example2.com">Even More Examples</a>'
-
         urls = re.findall('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', data)
-
+        print (i, id)
         print (urls)
 
 
