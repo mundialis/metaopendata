@@ -8,7 +8,7 @@ database = 'bmvimetadaten'
 def doQuery( conn ) :
     cur = conn.cursor()
 
-    cur.execute( "SELECT id, data FROM metadata WHERE (data LIKE '%WFS%')" )
+    cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%WFS%'" )
  )
 
     for id, data in cur.fetchall() :
