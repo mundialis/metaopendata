@@ -8,7 +8,7 @@ database = 'bmvimetadaten'
 def doQuery( conn ) :
     cur = conn.cursor()
 
-    cur.execute( "SELECT id, data FROM metadata WHERE ("data" LIKE '%WFS%' OR "changedate" LIKE '%WFS%' OR "createdate" LIKE '%WFS%' OR "doctype" LIKE '%WFS%' OR "extra" LIKE '%WFS%' OR "root" LIKE '%WFS%' OR "schemaid" LIKE '%WFS%' OR "title" LIKE '%WFS%' OR "istemplate" LIKE '%WFS%' OR "isharvested" LIKE '%WFS%' OR "harvesturi" LIKE '%WFS%' OR "harvestuuid" LIKE '%WFS%' OR "source" LIKE '%WFS%' OR "uuid" LIKE '%WFS%')
+    cur.execute( "SELECT id, data FROM metadata WHERE ("data" LIKE '%WFS%')
  )
 
     for id, data in cur.fetchall() :
