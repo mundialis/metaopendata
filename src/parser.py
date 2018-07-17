@@ -20,7 +20,7 @@ def doQuery( conn ) :
 
         urls = re.findall('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', data)
 
-        print urls
+        print (urls)
 
 
 import psycopg2
