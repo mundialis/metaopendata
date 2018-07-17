@@ -11,7 +11,7 @@ def doQuery( conn ) :
     cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%WFS%'" )
 
     for id, data in cur.fetchall() :
-        i++
+        i += 1
         print (i, id, data[:100])
 
 
