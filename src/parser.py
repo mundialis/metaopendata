@@ -12,7 +12,8 @@ def doQuery( conn ) :
  )
 
     for id, data in cur.fetchall() :
-        print (id, data[:100])
+        i++
+        print (i, id, data[:100])
 
 
 import psycopg2
