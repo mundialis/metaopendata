@@ -6,6 +6,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./src .
 
-CMD [ "python", "./dbtest.py" ]
+#CMD [ "python", "./dbtest.py" ]
 
-#ENTRYPOINT ["/usr/bin/python"]
+ENTRYPOINT ["python"]
