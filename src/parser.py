@@ -17,7 +17,8 @@ def doQuery( conn ) :
         i += 1
         urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', data)
         print (i, id)
-        print (urls)
+        for url in urls
+            print (url)
 
 
 import psycopg2
