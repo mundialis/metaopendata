@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-import re
+# import re
+import xml.etree.ElementTree as ET
 
 hostname = 'db'
 username = 'postgres'
@@ -16,10 +17,14 @@ def doQuery( conn ) :
     i = 0
     for id, data in cur.fetchall() :
         i += 1
-        urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', data)
-        print (i, id)
-        for url in urls :
-            print (url)
+        e = ET.fromstring( data )
+        # urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', data)
+        # print(i, id)
+        # for url in urls :
+        #     print( url )
+        for url in e.findall( 'gmd:URL' ) :
+            print( url )
+
 
 
 import psycopg2
