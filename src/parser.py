@@ -22,6 +22,8 @@ def doQuery( conn ) :
         # print(i, id)
         # for url in urls :
         #     print( url )
+        for child in e
+            print(child.tag, child.attrib)
         for url in e.findall( 'gmd:URL' ) :
             print( url )
 
