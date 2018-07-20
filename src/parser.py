@@ -12,6 +12,7 @@ password = '6Hwg8a7z3m7TZMg6'
 database = 'bmvimetadaten'
 
 cleanup = True # if True Table will be dropped and recreated
+debug = False
 
 class bcolors:
     HEADER = '\033[95m'
@@ -52,21 +53,30 @@ def retrieveGML( conn ) :
     cur = conn.cursor()
     cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%SERVICE=WFS%'" )
     # cur.execute( "SELECT id, data FROM metadata WHERE id IN ( 838, 542, 370 )" ) # for tests only on selected ids
-    i = 0
+    # cur.execute( "SELECT id, data FROM metadata WHERE (id BETWEEN 1231 AND 1246) AND (data LIKE '%SERVICE=WFS%')" ) # for tests only on selected ids
+    i = wfsUrlCount = wfsUrlCountAll = gmlCount = gmlCountAll = 0
     for id, data in cur.fetchall() :
         i += 1
         root = ET.fromstring( data )
         wfsUrls = root.findall( ".//{*}URL" )
-        print (  )
-        print ( bcolors.UNDERLINE + bcolors.HEADER + "#### " + str(i) + " ####" + bcolors.ENDC )
+        if debug :
+            print (  )
+        if  wfsUrls :
+            if debug :
+                print ( bcolors.UNDERLINE + bcolors.HEADER + "#### " + str(i) + " ####" + bcolors.ENDC )
+        else :
+            print ( bcolors.UNDERLINE + bcolors.HEADER + "#### " + str(i) + " ####" + bcolors.ENDC )
+            print ( bcolors.FAIL + "# No wfsUrl found! metadata_id: " + str(id) + " #" + bcolors.ENDC )
         for wfsUrl in wfsUrls :
             if "REQUEST=GetCapabilities" in wfsUrl.text and "SERVICE=WFS" in wfsUrl.text:
                 wfsName = wfsUrl.text.split('?')[0].split('/')[-1]
-                print ( bcolors.BOLD + "### metadata_id: " + str(id) + " name: " + wfsName + " ###" + bcolors.ENDC )
-                print ( bcolors.OKBLUE + "## WFS URL: " + wfsUrl.text + " ##" + bcolors.ENDC )
+                print ( bcolors.BOLD + "### processing metadata_id: " + str(id) + " name: " + wfsName + " ###" + bcolors.ENDC )
+                if debug :
+                    print ( bcolors.OKBLUE + "## WFS URL: " + wfsUrl.text + " ##" + bcolors.ENDC )
 #1 take GetCapabilities url -> get xml
 ######################################
                 try:
+                    wfsUrlCount += 1
                     response = urllib.request.urlopen( wfsUrl.text )
                     xml = ET.fromstring( response.read() )
 
@@ -76,7 +86,8 @@ def retrieveGML( conn ) :
                     if not featureTypes :
                         print ( bcolors.FAIL + "# No FeatureTypeName found (check parser)!" + bcolors.ENDC )
                     for featureType in featureTypes :
-                        print ( bcolors.OKGREEN + "# FeatureTypeName: " + featureType.text + bcolors.ENDC )
+                        if debug :
+                            print ( bcolors.OKGREEN + "# FeatureTypeName: " + featureType.text + bcolors.ENDC )
 #4 build FeatureType url
 ########################
                         versions = xml.findall( ".//{*}ServiceTypeVersion" )
@@ -91,20 +102,29 @@ def retrieveGML( conn ) :
                                 text_file = open( "/download/" + fileName, "wb" )
                                 text_file.write( response.read() )
                                 text_file.close()
-                                print ( "  saved file: " + fileName )
+                                gmlCount += 1
+                                if debug :
+                                    print ( "  saved file: " + fileName )
 #3 write all in db
 ##################
                                 insert = "INSERT INTO gml_files (metadata_id, filename, created) VALUES (" + str(id) + ", \'" + fileName + "\', " + "current_timestamp"  + ");"
                                 cur.execute( insert )
                                 conn.commit()
                             except UnicodeEncodeError as e:
-                                print( bcolors.FAIL + e.reason + " URL: " + gmlUrl + bcolors.ENDC )
+                                print( bcolors.FAIL + "#2# ERROR: " + e.reason + " URL: " + gmlUrl + bcolors.ENDC )
                                 pass
 
                 except urllib.error.URLError as e:
-                    print( bcolors.FAIL + e.reason  + " URL: " + wfsUrl.text + bcolors.ENDC )
+                    print( bcolors.FAIL + "#1# ERROR: " + e.reason  + " metadata_id: " + str(id) + " name: " + wfsName + " URL: " + wfsUrl.text + bcolors.ENDC )
                     pass
-
+                print ( "Collected " + str(gmlCount) + " GML files from " + str(wfsUrlCount) + " WFS URLs." )
+                gmlCountAll += gmlCount
+                wfsUrlCountAll += wfsUrlCount
+                gmlCount = wfsUrl = 0
+            # else :
+            #     print ( bcolors.WARNING + "## wrong URL: " + wfsUrl.text + " ##" + bcolors.ENDC )
+    print ( bcolors.OKGREEN + "Collection of GML files finished." + bcolors.ENDC)
+    print ( bcolors.OKGREEN + "Collected " + str(gmlCountAll) + " GML files from " + str(wfsUrlCountAll) + " WFS URLs of " + str(i) + " metadata entries." + bcolors.ENDC)
 
 myConnection = psycopg2.connect( host=hostname, user=username, password=password, dbname=database )
 if cleanup :
