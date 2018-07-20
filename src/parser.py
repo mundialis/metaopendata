@@ -3,6 +3,7 @@
 # import xml.etree.ElementTree as ET
 import lxml.etree as ET
 import urllib.request
+import time
 
 hostname = 'db'
 username = 'postgres'
@@ -21,6 +22,15 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+def timing(f):
+    def wrap(*args):
+        time1 = time.time()
+        ret = f(*args)
+        time2 = time.time()
+        print('{:s} function took {:.3f} ms'.format(f.__name__, (time2-time1)*1000.0))
+        return ret
+    return wrap
+
 def createTable( conn ):
     cur = conn.cursor()
     dropTable = "DROP TABLE IF EXISTS gml_files;"
@@ -36,10 +46,11 @@ def createTable( conn ):
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 
+@timing
 def retrieveGML( conn ) :
     cur = conn.cursor()
-    cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%SERVICE=WFS%'" )
-    # cur.execute( "SELECT id, data FROM metadata WHERE id IN ( 370, 218, 319, 3814, 4208, 1552, 2377, 1202, 2530)" ) # for tests only on selected ids
+    # cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%SERVICE=WFS%'" )
+    cur.execute( "SELECT id, data FROM metadata WHERE id IN ( 370, 4208, 2530)" ) # for tests only on selected ids
     i = 0
     for id, data in cur.fetchall() :
         i += 1
