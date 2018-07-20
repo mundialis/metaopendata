@@ -120,7 +120,7 @@ def retrieveGML( conn ) :
                 print ( "Collected " + str(gmlCount) + " GML files from " + str(wfsUrlCount) + " WFS URLs." )
                 gmlCountAll += gmlCount
                 wfsUrlCountAll += wfsUrlCount
-                gmlCount = wfsUrl = 0
+                gmlCount = wfsUrlCount = 0
             # else :
             #     print ( bcolors.WARNING + "## wrong URL: " + wfsUrl.text + " ##" + bcolors.ENDC )
     print ( bcolors.OKGREEN + "Collection of GML files finished." + bcolors.ENDC)
