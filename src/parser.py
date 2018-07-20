@@ -36,84 +36,39 @@ def createTable( conn ):
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 
-def doQuery( conn ) :
+def retrieveGML( conn ) :
     cur = conn.cursor()
-
-    # cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%SERVICE=WFS%'" )
-    cur.execute( "SELECT id, data FROM metadata WHERE id IN ( 370, 218, 319, 3814, 4208, 1552, 2377, 1202, 2530)" )
-
-    i = 0
-    for id, data in cur.fetchall() :
-        i += 1
+    cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%SERVICE=WFS%'" )
+    # cur.execute( "SELECT id, data FROM metadata WHERE id IN ( 370, 218, 319, 3814, 4208, 1552, 2377, 1202, 2530)" )
+    for id, data in cur.fetchall() :1
         root = ET.fromstring( data )
-        # urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', data)
-        # print( "# WFS Num + id :", i, id )
-
-        # print ( root )
-        # for elem in root.iter() :
-        #     print ( elem.tag, elem.text )
-        #
-        # root.getElementsByTagName(URL)
-
-        # for child_of_root in root :
-        #     print ( child_of_root.tag, child_of_root.attrib )
-        #     for child_of_child_of_root in child_of_root :
-        #         print ( child_of_child_of_root.tag, child_of_child_of_root.attrib )
-        # for url in urls :
-        #     print( url )
-        # for child in e:
-        #     print(child.tag, child.attrib)
-        # for child2 in child.findall( 'distributionInfo' ) :
-        #     for child3 in child2:
-        #         print(child3.tag, child3.attrib)
         wfsUrls = root.findall( ".//{*}URL" )
         print (  )
         print ( bcolors.UNDERLINE + bcolors.HEADER + "#### " + str(i) + " ####" + bcolors.ENDC )
-        # print ( elements )
         for wfsUrl in wfsUrls :
             if "REQUEST=GetCapabilities" in wfsUrl.text and "SERVICE=WFS" in wfsUrl.text:
                 wfsName = wfsUrl.text.split('?')[0].split('/')[-1]
-
                 print ( bcolors.BOLD + "### " + str(id) + " " + wfsName + " ###" + bcolors.ENDC )
                 print ( bcolors.OKBLUE + "## " + wfsUrl.text + " ##" + bcolors.ENDC )
-
 #1 take GetCapabilities url -> get xml
 ######################################
-
                 response = urllib.request.urlopen( wfsUrl.text )
-                # xmlString = response.read().decode()
-                # xml = ET.ElementTree( ET.fromstring( xmlString ) )
                 xml = ET.fromstring( response.read() )
-                # print ( xml )
-                # for elem in xml.iter() :
-                #      print ( elem.tag, elem.text )
-
 #2 find <FeatureTypeList> <FeatureType> <Name>
 ##############################################
-
-                # featureTypes = xml.findall( ".//{http://www.opengis.net/wfs/2.0}FeatureType" )
-                # featureTypes = xml.findall( ".//{http://www.opengis.net/wfs/2.0}Name" )
                 featureTypes = xml.findall( ".//{*}FeatureType/{*}Name" )
                 if not featureTypes :
                     print ( bcolors.FAIL + "# No FeatureTypeName found (check parser)!" + bcolors.ENDC )
                 for featureType in featureTypes :
                     print ( bcolors.OKGREEN + "# FeatureTypeName : " + featureType.text + bcolors.ENDC )
-
 #4 build FeatureType url
 ########################
-                    # verison ??? --> ServiceTypeVersion
                     versions = xml.findall( ".//{*}ServiceTypeVersion" )
                     for version in versions :
-                        # print ( version.text )
-                        # replace REQUEST=GetCapabilities with REQUEST=GetFeature&typeNames=FeatureTypeName&count=5
                         gmlUrl = wfsUrl.text.replace( "REQUEST=GetCapabilities" , "version=" + version.text + "&REQUEST=GetFeature&count=5&typeNames=" + featureType.text )
-                        # print ( gmlUrl )
-
 #5 download GML
 ###############
                         response = urllib.request.urlopen( gmlUrl )
-                        # gml = ET.fromstring( response.read() )
-                        # print ( gml )
                         fileName = wfsName + "-" + featureType.text.replace( ":", "-" ) + "-" + version.text + ".gml"
                         text_file = open( "/download/" + fileName, "wb" )
                         text_file.write( response.read() )
@@ -122,16 +77,13 @@ def doQuery( conn ) :
 #3 write all in db
 ##################
                         insert = "INSERT INTO gml_files (metadata_id, filename, created) VALUES (" + str(id) + ", \'" + fileName + "\', " + "current_timestamp"  + ");"
-                        # print ( insert )
                         cur.execute( insert )
                         conn.commit()
 
-# insert into table
-
-
-
 import psycopg2
 myConnection = psycopg2.connect( host=hostname, user=username, password=password, dbname=database )
-createTable( myConnection )
-doQuery( myConnection )
+if cleanup :
+    createTable( myConnection )
+
+retrieveGML( myConnection )
 myConnection.close()
