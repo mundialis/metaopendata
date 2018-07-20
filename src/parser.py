@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-# import xml.etree.ElementTree as ET
+import psycopg2
 import lxml.etree as ET
 import urllib.request
+import urllib
 import time
 
 hostname = 'db'
@@ -10,7 +11,7 @@ username = 'postgres'
 password = '6Hwg8a7z3m7TZMg6'
 database = 'bmvimetadaten'
 
-cleanup = True
+cleanup = True # if True Table will be dropped and recreated
 
 class bcolors:
     HEADER = '\033[95m'
@@ -49,8 +50,8 @@ def createTable( conn ):
 @timing
 def retrieveGML( conn ) :
     cur = conn.cursor()
-    # cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%SERVICE=WFS%'" )
-    cur.execute( "SELECT id, data FROM metadata WHERE id IN ( 370, 4208, 2530)" ) # for tests only on selected ids
+    cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%SERVICE=WFS%'" )
+    # cur.execute( "SELECT id, data FROM metadata WHERE id IN ( 838, 542, 370 )" ) # for tests only on selected ids
     i = 0
     for id, data in cur.fetchall() :
         i += 1
@@ -61,39 +62,50 @@ def retrieveGML( conn ) :
         for wfsUrl in wfsUrls :
             if "REQUEST=GetCapabilities" in wfsUrl.text and "SERVICE=WFS" in wfsUrl.text:
                 wfsName = wfsUrl.text.split('?')[0].split('/')[-1]
-                print ( bcolors.BOLD + "### " + str(id) + " " + wfsName + " ###" + bcolors.ENDC )
-                print ( bcolors.OKBLUE + "## " + wfsUrl.text + " ##" + bcolors.ENDC )
+                print ( bcolors.BOLD + "### metadata_id: " + str(id) + " name: " + wfsName + " ###" + bcolors.ENDC )
+                print ( bcolors.OKBLUE + "## WFS URL: " + wfsUrl.text + " ##" + bcolors.ENDC )
 #1 take GetCapabilities url -> get xml
 ######################################
-                response = urllib.request.urlopen( wfsUrl.text )
-                xml = ET.fromstring( response.read() )
+                try:
+                    response = urllib.request.urlopen( wfsUrl.text )
+                    xml = ET.fromstring( response.read() )
+
 #2 find <FeatureTypeList> <FeatureType> <Name>
 ##############################################
-                featureTypes = xml.findall( ".//{*}FeatureType/{*}Name" )
-                if not featureTypes :
-                    print ( bcolors.FAIL + "# No FeatureTypeName found (check parser)!" + bcolors.ENDC )
-                for featureType in featureTypes :
-                    print ( bcolors.OKGREEN + "# FeatureTypeName : " + featureType.text + bcolors.ENDC )
+                    featureTypes = xml.findall( ".//{*}FeatureType/{*}Name" )
+                    if not featureTypes :
+                        print ( bcolors.FAIL + "# No FeatureTypeName found (check parser)!" + bcolors.ENDC )
+                    for featureType in featureTypes :
+                        print ( bcolors.OKGREEN + "# FeatureTypeName: " + featureType.text + bcolors.ENDC )
 #4 build FeatureType url
 ########################
-                    versions = xml.findall( ".//{*}ServiceTypeVersion" )
-                    for version in versions :
-                        gmlUrl = wfsUrl.text.replace( "REQUEST=GetCapabilities" , "version=" + version.text + "&REQUEST=GetFeature&count=5&typeNames=" + featureType.text )
+                        versions = xml.findall( ".//{*}ServiceTypeVersion" )
+                        for version in versions :
+                            featureTypeURLName = urllib.parse.quote( featureType.text, safe='/', encoding=None, errors=None )
+                            gmlUrl = wfsUrl.text.replace( "REQUEST=GetCapabilities" , "version=" + version.text + "&REQUEST=GetFeature&count=5&typeNames=" + featureTypeURLName )
 #5 download GML
 ###############
-                        response = urllib.request.urlopen( gmlUrl )
-                        fileName = wfsName + "-" + featureType.text.replace( ":", "-" ) + "-" + version.text + ".gml"
-                        text_file = open( "/download/" + fileName, "wb" )
-                        text_file.write( response.read() )
-                        text_file.close()
-                        print ( "  saved file: " + fileName )
+                            try:
+                                response = urllib.request.urlopen( gmlUrl )
+                                fileName = wfsName + "-" + featureType.text.replace( ":", "-" ) + "-" + version.text + ".gml"
+                                text_file = open( "/download/" + fileName, "wb" )
+                                text_file.write( response.read() )
+                                text_file.close()
+                                print ( "  saved file: " + fileName )
 #3 write all in db
 ##################
-                        insert = "INSERT INTO gml_files (metadata_id, filename, created) VALUES (" + str(id) + ", \'" + fileName + "\', " + "current_timestamp"  + ");"
-                        cur.execute( insert )
-                        conn.commit()
+                                insert = "INSERT INTO gml_files (metadata_id, filename, created) VALUES (" + str(id) + ", \'" + fileName + "\', " + "current_timestamp"  + ");"
+                                cur.execute( insert )
+                                conn.commit()
+                            except UnicodeEncodeError as e:
+                                print( bcolors.FAIL + e.reason + " URL: " + gmlUrl + bcolors.ENDC )
+                                pass
 
-import psycopg2
+                except urllib.error.URLError as e:
+                    print( bcolors.FAIL + e.reason  + " URL: " + wfsUrl.text + bcolors.ENDC )
+                    pass
+
+
 myConnection = psycopg2.connect( host=hostname, user=username, password=password, dbname=database )
 if cleanup :
     createTable( myConnection )
