@@ -9,6 +9,8 @@ username = 'postgres'
 password = '6Hwg8a7z3m7TZMg6'
 database = 'bmvimetadaten'
 
+cleanup = True
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -18,6 +20,21 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+def createTable( conn ):
+    cur = conn.cursor()
+    dropTable = "DROP TABLE IF EXISTS gml_files;"
+    try:
+        cur.execute( dropTable )
+        conn.commit()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    createTable = "CREATE TABLE IF NOT EXISTS gml_files (id SERIAL PRIMARY KEY, metadata_id integer NOT NULL, filename varchar(255) NOT NULL, created timestamp NOT NULL);"
+    try:
+        cur.execute( createTable )
+        conn.commit()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
 def doQuery( conn ) :
     cur = conn.cursor()
@@ -104,16 +121,17 @@ def doQuery( conn ) :
                         print ( "  saved file: " + fileName )
 #3 write all in db
 ##################
-# CREATE TABLE gml_files (
-#     id          integer,
-#     metadata_id integer,
-#     filename    varchar(40) NOT NULL,
-#     created     date,
-#     PRIMARY KEY (id)
-# );
+                        insert = "INSERT INTO gml_files (metadata_id, filename, created) VALUES (" + str(id) + ", \'" + fileName + "\', " + "current_timestamp"  + ");"
+                        # print ( insert )
+                        cur.execute( insert )
+                        conn.commit()
+
+# insert into table
+
 
 
 import psycopg2
 myConnection = psycopg2.connect( host=hostname, user=username, password=password, dbname=database )
+createTable( myConnection )
 doQuery( myConnection )
 myConnection.close()
