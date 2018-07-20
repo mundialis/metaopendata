@@ -40,7 +40,7 @@ def retrieveGML( conn ) :
     cur = conn.cursor()
     cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%SERVICE=WFS%'" )
     # cur.execute( "SELECT id, data FROM metadata WHERE id IN ( 370, 218, 319, 3814, 4208, 1552, 2377, 1202, 2530)" ) # for tests only on selected ids
-    for id, data in cur.fetchall() :1
+    for id, data in cur.fetchall() :
         root = ET.fromstring( data )
         wfsUrls = root.findall( ".//{*}URL" )
         print (  )
