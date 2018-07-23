@@ -5,14 +5,51 @@ import lxml.etree as ET
 import urllib.request
 import urllib
 import time
+import sys, getopt
+import os, shutil
 
-hostname = 'db'
-username = 'postgres'
-password = '6Hwg8a7z3m7TZMg6'
-database = 'bmvimetadaten'
+def main(argv):
 
-cleanup = True # if True Table will be dropped and recreated
-debug = False
+    hostname = 'db'
+    username = 'postgres'
+    password = '6Hwg8a7z3m7TZMg6'
+    database = 'bmvimetadaten'
+
+    # default values
+    cleanup = False # if True Table will be dropped and recreated
+    debug = False
+    dryrun = True
+
+    try:
+        opts, args = getopt.getopt(argv,"hdcv",["no-dryrun","cleanup","debug"])
+    except getopt.GetoptError:
+        print ('parser.py [--no-dryrun] [--cleanup] [--debug]')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print ('parser.py [--no-dryrun] [--cleanup] [--debug]')
+            sys.exit()
+        elif opt in ("-d", "--no-dryrun"):
+            dryrun = False
+        elif opt in ("-c", "--cleanup"):
+            cleanup = True
+        elif opt in ("-v", "--debug"):
+            debug = True
+
+    if cleanup :
+        print ( bcolors.UNDERLINE + bcolors.BOLD + "# info # cleanup enabled; will remove old files and redownload #" + bcolors.ENDC )
+    if dryrun :
+        print ( bcolors.UNDERLINE + bcolors.BOLD + "# info # dryrun enabled; will not download #" + bcolors.ENDC )
+    if debug :
+        print ( bcolors.UNDERLINE + bcolors.BOLD + "# info # debug enabled #" + bcolors.ENDC )
+
+    if cleanup and not dryrun :
+        doCleanup()
+
+    myConnection = psycopg2.connect( host=hostname, user=username, password=password, dbname=database )
+    retrieveGML( myConnection, debug, cleanup, dryrun )
+    myConnection.close()
+
 
 class bcolors:
     HEADER = '\033[95m'
@@ -33,6 +70,18 @@ def timing(f):
         return ret
     return wrap
 
+def doCleanup() :
+    print( bcolors.WARNING + "doing cleanup - deleting files" + bcolors.ENDC )
+    folder = '/download'
+    for the_file in os.listdir(folder):
+        file_path = os.path.join(folder, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+            #elif os.path.isdir(file_path): shutil.rmtree(file_path)
+        except Exception as e:
+            print(e)
+
 def createTable( conn ):
     cur = conn.cursor()
     dropTable = "DROP TABLE IF EXISTS gml_files;"
@@ -49,7 +98,7 @@ def createTable( conn ):
         print(error)
 
 @timing
-def retrieveGML( conn ) :
+def retrieveGML( conn, debug, cleanup, dryrun ) :
     cur = conn.cursor()
     cur.execute( "SELECT id, data FROM metadata WHERE data LIKE '%SERVICE=WFS%'" )
     # cur.execute( "SELECT id, data FROM metadata WHERE id IN ( 838, 542, 370 )" ) # for tests only on selected ids
@@ -71,6 +120,10 @@ def retrieveGML( conn ) :
             if "REQUEST=GetCapabilities" in wfsUrl.text and "SERVICE=WFS" in wfsUrl.text:
                 wfsName = wfsUrl.text.split('?')[0].split('/')[-1]
                 print ( bcolors.BOLD + "### processing metadata_id: " + str(id) + " name: " + wfsName + " ###" + bcolors.ENDC )
+                identifiers = root.findall( ".//{*}fileIdentifier/{*}CharacterString" )
+                for identifier in identifiers :
+                    if debug :
+                        print ( bcolors.OKGREEN + "# identifier: " + identifier.text + bcolors.ENDC )
                 if debug :
                     print ( bcolors.OKBLUE + "## WFS URL: " + wfsUrl.text + " ##" + bcolors.ENDC )
 #1 take GetCapabilities url -> get xml
@@ -90,6 +143,8 @@ def retrieveGML( conn ) :
                             print ( bcolors.OKGREEN + "# FeatureTypeName: " + featureType.text + bcolors.ENDC )
 #4 build FeatureType url
 ########################
+
+
                         versions = xml.findall( ".//{*}ServiceTypeVersion" )
                         for version in versions :
                             featureTypeURLName = urllib.parse.quote( featureType.text, safe='/', encoding=None, errors=None )
@@ -98,18 +153,14 @@ def retrieveGML( conn ) :
 ###############
                             try:
                                 response = urllib.request.urlopen( gmlUrl )
-                                fileName = wfsName + "-" + featureType.text.replace( ":", "-" ) + "-" + version.text + ".gml"
-                                text_file = open( "/download/" + fileName, "wb" )
-                                text_file.write( response.read() )
-                                text_file.close()
+                                fileName = wfsName + "-" + identifier.text + "-" + featureType.text.split(':')[-1] + "-" + version.text + ".gml"
+                                if not dryrun :
+                                    text_file = open( "/download/" + fileName, "wb" )
+                                    text_file.write( response.read() )
+                                    text_file.close()
+                                    if debug :
+                                        print ( "  saved " + bcolors.UNDERLINE + gmlUrl + bcolors.ENDC + " to file: " + fileName )
                                 gmlCount += 1
-                                if debug :
-                                    print ( "  saved file: " + fileName )
-#3 write all in db
-##################
-                                insert = "INSERT INTO gml_files (metadata_id, filename, created) VALUES (" + str(id) + ", \'" + fileName + "\', " + "current_timestamp"  + ");"
-                                cur.execute( insert )
-                                conn.commit()
                             except UnicodeEncodeError as e:
                                 print( bcolors.FAIL + "#2# ERROR: " + e.reason + " URL: " + gmlUrl + bcolors.ENDC )
                                 pass
@@ -126,9 +177,5 @@ def retrieveGML( conn ) :
     print ( bcolors.OKGREEN + "Collection of GML files finished." + bcolors.ENDC)
     print ( bcolors.OKGREEN + "Collected " + str(gmlCountAll) + " GML files from " + str(wfsUrlCountAll) + " WFS URLs of " + str(i) + " metadata entries." + bcolors.ENDC)
 
-myConnection = psycopg2.connect( host=hostname, user=username, password=password, dbname=database )
-if cleanup :
-    createTable( myConnection )
-
-retrieveGML( myConnection )
-myConnection.close()
+if __name__ == "__main__":
+   main(sys.argv[1:])
