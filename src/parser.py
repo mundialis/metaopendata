@@ -7,6 +7,7 @@ import urllib
 import time
 import sys, getopt
 import os, shutil
+import os.path
 
 def main(argv):
 
@@ -155,12 +156,17 @@ def retrieveGML( conn, debug, cleanup, dryrun ) :
                                 response = urllib.request.urlopen( gmlUrl )
                                 fileName = wfsName + "-" + identifier.text + "-" + featureType.text.split(':')[-1] + "-" + version.text + ".gml"
                                 if not dryrun :
-                                    text_file = open( "/download/" + fileName, "wb" )
-                                    text_file.write( response.read() )
-                                    text_file.close()
-                                    if debug :
-                                        print ( "  saved " + bcolors.UNDERLINE + gmlUrl + bcolors.ENDC + " to file: " + fileName )
-                                gmlCount += 1
+                                    fullpath = "/download/" + fileName
+                                    if not os.path.exists(fullpath) :
+                                        text_file = open( fullpath, "wb" )
+                                        text_file.write( response.read() )
+                                        text_file.close()
+                                        gmlCount += 1
+                                        if debug :
+                                            print ( "  saved " + bcolors.UNDERLINE + gmlUrl + bcolors.ENDC + " to file: " + fileName )
+                                    else :
+                                        if debug :
+                                            print ( "  file already exists: " + fileName )
                             except UnicodeEncodeError as e:
                                 print( bcolors.FAIL + "#2# ERROR: " + e.reason + " URL: " + gmlUrl + bcolors.ENDC )
                                 pass
