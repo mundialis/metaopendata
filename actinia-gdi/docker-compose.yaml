@@ -1,12 +1,5 @@
-version: '2'
-services:
-  s2i-actinia-gdi-builder:
-    # image: centos/python-35-centos7
-    build:
-      context: s2i-actinia-gdi-builder/
-    environment:
-      SETUPTOOLS_SCM_PRETEND_VERSION: 0.0.1
+  metaopendata-api:
+    image: actinia-gdi
+    restart: always
     volumes:
-      - /mnt/data/metaopendata:/tmp/metaopendata:Z
-    ports:
-      - 5000:8080
+      - /mnt/data/metaopendata:/tmp/metaopendata

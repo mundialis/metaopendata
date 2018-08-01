@@ -65,7 +65,8 @@ cd metaopendata/actinia-gdi
 docker build s2i-actinia-gdi-builder -t s2i-actinia-gdi-builder
 s2i build . s2i-actinia-gdi-builder actinia-gdi
 
-docker run -v /mnt/data/metaopendata:/tmp/metaopendata:Z -p 5000:8080 actinia-gdi
+docker run -v /mnt/data/metaopendata:/tmp/metaopendata:Z --link dockerexample_web_1 --name actinia-gdi actinia-gdi
+
 
 # or if you have a docker-compose setup, include the content of the
 # docker-compose.yaml into yours and run

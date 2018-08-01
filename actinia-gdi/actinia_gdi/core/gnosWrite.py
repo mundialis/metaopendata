@@ -44,8 +44,10 @@ def create(filename):
     url = GEONETWORK.csw_publication
     recordtpl = tplEnv.get_template('geonetwork/template_metadaten.xml')
     record = recordtpl.render(title=filename).replace('\n', '')
+    recordfs = recordtpl.render(title=filename)
     postbodytpl = tplEnv.get_template('geonetwork/post_create_record.xml')
     postbody = postbodytpl.render(metadata_record=record).replace('\n', '')
+    postbodyfs = postbodytpl.render(metadata_record=recordfs)
     headers = {'content-type': 'application/xml; charset=utf-8'}
 
     log.info('Creating metadata record')
@@ -61,7 +63,14 @@ def create(filename):
     except requests.exceptions.ConnectionError:
         return None
 
-    # TODO: write filled metadata template to file system
+    if not os.path.isdir(FILEUPLOAD.templates):
+        os.makedirs(FILEUPLOAD.templates)
+
+    with open(FILEUPLOAD.templates + '/' + filename + '_template.xml',
+              'x') as file:
+        file.write(postbodyfs)
+    log.info('Received binary file, saved to '
+             + FILEUPLOAD.templates + '/' + filename + '_template.xml')
 
     try:
         parsedresp = xmltodict.parse(gnosresp.content)
