@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>MetaOpenData</title>
+<script type="text/javascript" src="js/index.js"></script>
+<script type="text/javascript" src="js/ol3app.js"></script>
+<script type="text/javascript" src="js/ol-5.1.3.js"></script>
+<link rel="stylesheet" type="text/css" href="css/ol.css">
+<link rel="stylesheet" type="text/css" href="css/index.css">
+<link rel="stylesheet" type="text/css" href="css/loading-mask.css">
+<link rel="stylesheet" type="text/css" href="css/fonts.css">
+<link rel="shortcut icon" href="resources/img/MetaOpenData-Projektlogo_fin_4c_icon.png" type="image/x-icon" />
+</head>
+<body onload="manageForm();addOL3();">
+  <section id="parentcontainer">
+    <div id="logobox">
+        <img class="logo" src="resources/img/MetaOpenData-Projektlogo_fin_4c.svg" alt="Logo from MetaOpenData" />
+        <h3 class="logo"> MetaOpenData</h3>
+        <img class="logo" src="resources/img/logo_soprasteria-consulting.png" alt="Logo from Sopra Steria" />
+        <img class="logo" src="resources/img/mundialis_logo.png" alt="Logo from mundialis" />
+    </div>
+    <form id="geodataform" enctype="multipart/form-data">
+      <section class="flexcontainer">
+          <fieldset class="flexitem">
+            <legend>Upload your Geodata</legend>
+            <p>Upload a zipped shapefile directory.<br>For Shapefile-upload, only ZIP archive is allowed.</p>
+            <input type="file" name="geodataFile" id="geodataFile"/>
+            <!-- outcomment from here to remove json upload -->
+            <hr>
+            <input type="button" name="drawBtn" value="Draw Polygon" id="drawBtn" />
+            <input type="text" name="jsonFile" id="jsonFile" size="23" placeholder="Click on button to draw" readonly />
+            <p>Or draw a polygon on the map.<br>Click to draw Polygon, double click to finish.</p>
+          </fieldset>
+          <fieldset class="flexitem">
+            <legend>2. Submit</legend>
+            <section class="flexcontainer flexcontainer-3 flexitem">
+            <!-- outcomment until here to remove json upload -->
+              <input type="submit" name="send" value="Submit" class="flexitem btn" />
+              <input type="reset" name="clear" value="Reset" id="clear" class="flexitem btn" />
+            </section>
+          </fieldset>
+          <div id="warning" class="flexitem">
+        </div>
+      </section>
+  </form>
+  <p class="imprint"><a href="https://mundialis.github.io/metaopendata/#impressum">Impressum</a> - <a href="https://mundialis.github.io/metaopendata/#Datenschutz">Datenschutzerklärung</a></p>
+</section>
+<div id="loading-mask"></div>
+<div id="map" class="map"></div>
+</body>
+</html>
