@@ -1,0 +1,5 @@
+  metaopendata-api:
+    image: actinia-gdi
+    restart: always
+    volumes:
+      - /mnt/data/metaopendata:/tmp/metaopendata
