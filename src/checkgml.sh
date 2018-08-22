@@ -22,6 +22,8 @@ fi
 
 if [ $DRY_RUN -eq 0 ]; then
   mkdir -p ${GML_DIR}/invalid
+else
+  echo "## doing dry run ##"
 fi
 
 for filepath in ${GML_DIR}/*.gml; do
