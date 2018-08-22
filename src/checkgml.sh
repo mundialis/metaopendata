@@ -4,10 +4,11 @@ usage="checkgml.sh [-n] -d GML_DIR "
 
 DRY_RUN=0
 
-while getopts nd: options; do
+while getopts nd:h options; do
   case "${options}" in
     d) GML_DIR=$OPTARG;;
     n) DRY_RUN=1;;
+    h) echo $usage
     \? ) echo $usage
       exit 1;;
     * ) echo $usage
