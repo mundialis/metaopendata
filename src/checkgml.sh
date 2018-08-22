@@ -1,18 +1,37 @@
 #!/bin/bash
 
-GML_DIR=$1
+usage="checkgml.sh [-n] -d GML_DIR "
 
-# echo "GML_DIR: ${GML_DIR}"
+DRY_RUN=0
 
-#### check if gml-file is valid
+while getopts d: options; do
+  case "${options}" in
+    d) GML_DIR=$OPTARG;;
+    n) DRY_RUN=1;;
+    \? ) echo $usage
+      exit 1;;
+    * ) echo $usage
+      exit 1;;
+  esac
+done
+
+if [ "x" == "x$GML_DIR" ]; then
+  echo "-d [option] is required"
+  exit 1
+fi
+
+if [ $DRY_RUN -eq 0 ]; then
+  mkdir -p ${GML_DIR}/invalid
+fi
+
 for filepath in ${GML_DIR}/*.gml; do
   filename=$(basename ${filepath})
-  # echo "filename: ${filename}"
   docker run -v ${GML_DIR}:/data geodata/gdal ogrinfo /data/${filename} > /dev/null
   if [ $? -ne 0 ]; then
     echo -e "\e[31mFAIL\e[0m ${filename}"
-    mkdir -p ${GML_DIR}/invalid
-    mv ${GML_DIR}/${filename} ${GML_DIR}/invalid
+    if [ $DRY_RUN -eq 0 ]; then
+      mv ${GML_DIR}/${filename} ${GML_DIR}/invalid
+    fi
   else
     echo -e "\e[32mOK\e[0m ${filename}"
   fi
