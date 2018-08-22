@@ -11,6 +11,8 @@ for filepath in ${GML_DIR}/*.gml; do
   docker run -v ${GML_DIR}:/data geodata/gdal ogrinfo /data/${filename} > /dev/null
   if [ $? -ne 0 ]; then
     echo -e "\e[31mFAIL\e[0m ${filename}"
+    mkdir -p ${GML_DIR}/invalid
+    mv ${filename} invalid/
   else
     echo -e "\e[32mOK\e[0m ${filename}"
   fi
