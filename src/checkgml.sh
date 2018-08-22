@@ -4,7 +4,7 @@ usage="checkgml.sh [-n] -d GML_DIR "
 
 DRY_RUN=0
 
-while getopts d: options; do
+while getopts nd: options; do
   case "${options}" in
     d) GML_DIR=$OPTARG;;
     n) DRY_RUN=1;;
