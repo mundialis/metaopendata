@@ -9,6 +9,7 @@ while getopts nd:h options; do
     d) GML_DIR=$OPTARG;;
     n) DRY_RUN=1;;
     h) echo $usage
+      exit 1;;
     \? ) echo $usage
       exit 1;;
     * ) echo $usage
