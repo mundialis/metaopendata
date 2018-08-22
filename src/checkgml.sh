@@ -12,7 +12,7 @@ for filepath in ${GML_DIR}/*.gml; do
   if [ $? -ne 0 ]; then
     echo -e "\e[31mFAIL\e[0m ${filename}"
     mkdir -p ${GML_DIR}/invalid
-    mv ${filename} invalid/
+    mv ${GML_DIR}/${filename} ${GML_DIR}/invalid
   else
     echo -e "\e[32mOK\e[0m ${filename}"
   fi
