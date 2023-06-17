@@ -1,4 +1,4 @@
-colorlog==3.1.4
+colorlog==3.2.0
 Flask==2.3.2
 Flask-Cors==3.0.9
 Flask-RESTful==0.3.6
