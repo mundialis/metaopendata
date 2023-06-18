@@ -4,7 +4,7 @@ Flask-Cors==3.0.9
 Flask-RESTful==0.3.6
 flask-restful-swagger-2==0.35
 gunicorn==19.7.1
-jsonmodels==2.3
+jsonmodels==2.6.0
 peewee==3.2.2
 pip==21.1
 psycopg2-binary==2.7.4
