@@ -5,7 +5,7 @@ Flask-RESTful==0.3.6
 flask-restful-swagger-2==0.35
 gunicorn==19.7.1
 jsonmodels==2.3
-peewee==3.2.2
+peewee==3.16.2
 pip==21.1
 psycopg2-binary==2.7.4
 requests==2.31.0
